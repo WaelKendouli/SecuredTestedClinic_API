@@ -45,7 +45,7 @@ namespace ClinicManagementSystemAPI.Controllers
                 return Ok("Patient deleted successfully");
             }
 
-            return BadRequest("Failed to delete patient");
+            return NotFound("Failed to delete patient");
         }
 
         [HttpPut("UpdatePatient/{patientID}", Name = "UpdatePatient")]
