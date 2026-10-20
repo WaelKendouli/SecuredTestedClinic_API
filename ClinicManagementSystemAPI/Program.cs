@@ -25,7 +25,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();   // Generates the JSON spec
     app.UseSwaggerUI(); // Serves the HTML webpage at /swagger
 }
-
+app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");   // <-- MUST be before MapControllers / UseAuthorization
 
 
