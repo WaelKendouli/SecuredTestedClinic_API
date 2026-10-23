@@ -37,7 +37,7 @@ namespace DTOsLayer
                     Address = "456 Oak Avenue",
                     Gender = "Female",
                     Password = BCrypt.Net.BCrypt.HashPassword("TestPassword223!"),
-                    Role = "Patient"
+                    Role = "Admin"
                 }
                 ,
                 new TestedPatientDataDTO
@@ -51,7 +51,7 @@ namespace DTOsLayer
                     Address = "789 Pine Street",
                     Gender = "Female",
                     Password = BCrypt.Net.BCrypt.HashPassword("TestPassword323!"),
-                    Role = "Patient"
+                    Role = "Admin"
                 }
             };
         }

@@ -9,6 +9,7 @@ namespace ClinicManagementSystemAPI.Controllers
     [ApiController]
     public class PatientController : Controller
     {
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAllPatients", Name = "GetAllPatients")]
         public async Task<IActionResult> GetAllPatients()
         {
@@ -19,7 +20,8 @@ namespace ClinicManagementSystemAPI.Controllers
             }
             return Ok(patients);
         }
-
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [HttpPost("AddNewPatient" , Name = "AddNewPatient")]
         public async Task<IActionResult> AddNewPatient([FromBody] PatientDTO patient)
         {
@@ -34,11 +36,13 @@ namespace ClinicManagementSystemAPI.Controllers
 
             return Ok(new { NewID = NewPatient.PatientID });
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("DeletePatient/{patientID}" , Name = "DeletePatient")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+
 
         public async Task<IActionResult> DeletePatient(int patientID)
         {
@@ -49,11 +53,12 @@ namespace ClinicManagementSystemAPI.Controllers
 
             return NotFound("Failed to delete patient");
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPut("UpdatePatient/{patientID}", Name = "UpdatePatient")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 
         public async Task<IActionResult> UpdatePatient([FromBody] PatientDTO patient)
         {
