@@ -1,45 +1,92 @@
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("ClinicApiCorsPolicy", policy =>
+// ===============================
+// JWT Authentication Configuration
+// ===============================
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        policy
-            .WithOrigins(
-                "https://localhost:7176",
-                "http://localhost:5202"
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+
+// ===============================
+// Authorization Configuration
+// ===============================
+
+builder.Services.AddAuthorization();
+
+// ===============================
+// Controllers
+// ===============================
+
+builder.Services.AddControllers();
+
+// ===============================
+// Swagger Configuration (Swashbuckle 10.x / Microsoft.OpenApi 2.x)
+// ===============================
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    // 1) Define the JWT Bearer security scheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter: Bearer {your JWT token}"
+    });
+
+    // 2) Require the Bearer scheme for secured endpoints
+    //    Swashbuckle 10.x signature: takes a Func<OpenApiDocument, OpenApiSecurityRequirement>
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", document),
+            new List<string>()
+        }
     });
 });
 
-
-
-// 1. ADD SWAGGER SERVICES
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // <--- Make sure this is here!
-
-
-
+// Build the application.
 var app = builder.Build();
 
+// ===============================
+// HTTP Request Pipeline
+// ===============================
 
-
-// 2. ENABLE SWAGGER MIDDLEWARE
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();   // Generates the JSON spec
-    app.UseSwaggerUI(); // Serves the HTML webpage at /swagger
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
 app.UseHttpsRedirection();
-app.UseCors("ClinicApiCorsPolicy");   // <-- MUST be before MapControllers / UseAuthorization
 
-
+// Authentication must run BEFORE Authorization.
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

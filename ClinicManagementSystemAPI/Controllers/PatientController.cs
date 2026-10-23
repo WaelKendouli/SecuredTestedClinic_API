@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ClinicLogicLayer;
 using DTOsLayer;
+using Microsoft.AspNetCore.Authorization;
 namespace ClinicManagementSystemAPI.Controllers
 {
+    [Authorize]
     [Route("api/Patient")]
     [ApiController]
     public class PatientController : Controller
