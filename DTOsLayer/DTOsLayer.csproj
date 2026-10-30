@@ -77,6 +77,9 @@
   <ItemGroup>
     <Compile Include="AppointmentDTO.cs" />
     <Compile Include="AppointmentItemDTO.cs" />
+    <Compile Include="Auth\LogoutRequest.cs" />
+    <Compile Include="Auth\clsRefreshRequest.cs" />
+    <Compile Include="Auth\TokenResponse.cs" />
     <Compile Include="DoctorDTO.cs" />
     <Compile Include="DoctorsListDTO.cs" />
     <Compile Include="LoginDTO.cs" />

@@ -1,16 +1,28 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
+﻿using DTOsLayer;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
-using DTOsLayer;
+using DTOsLayer.Auth;
 namespace ClinicManagementSystemAPI.Controllers
 {
     [Route("api/Auth")]
     [ApiController]
     public class AuthController : Controller
     {
+
+        private static string GenerateRefreshToken()
+        {
+            var bytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+            return Convert.ToBase64String(bytes);
+        }
+
+
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequestDTO request)
         {
@@ -80,10 +92,100 @@ namespace ClinicManagementSystemAPI.Controllers
 
             // Step 7: Return the serialized JWT token to the client.
             // The client will send this token with future requests.
-            return Ok(new
+            /* return Ok(new
+             {
+                 token = new JwtSecurityTokenHandler().WriteToken(token)
+             });*/
+
+
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            // Create refresh token (random)
+            var refreshToken = GenerateRefreshToken();
+
+            // Store refresh token securely (hash + expiry + not revoked)
+            patient.RefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(refreshToken);
+            patient.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+            patient.RefreshTokenRevokedAt = null;
+
+            return Ok(new TokenResponse
             {
-                token = new JwtSecurityTokenHandler().WriteToken(token)
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
             });
         }
+
+        [HttpPost("refresh")]
+        public IActionResult Refresh([FromBody] clsRefreshRequest request)
+        {
+            var patient = TestedPatientDataDTO.Data
+                .FirstOrDefault(p => p.Email == request.Email);
+
+            if (patient == null)
+                return Unauthorized("Invalid refresh request");
+
+            if (patient.RefreshTokenRevokedAt != null)
+                return Unauthorized("Refresh token is revoked");
+
+            if (patient.RefreshTokenExpiresAt == null || patient.RefreshTokenExpiresAt <= DateTime.UtcNow)
+                return Unauthorized("Refresh token expired");
+
+            bool refreshValid = BCrypt.Net.BCrypt.Verify(request.RefreshToken, patient.RefreshTokenHash);
+            if (!refreshValid)
+                return Unauthorized("Invalid refresh token");
+
+            // Issue NEW access token (same claims & signing settings as login)
+            var claims = new[]
+            {
+        new Claim(ClaimTypes.NameIdentifier, patient.PatientID.ToString()),
+        new Claim(ClaimTypes.Email, patient.Email),
+        new Claim(ClaimTypes.Role, patient.Role)
+    };
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("THIS_IS_A_VERY_SECRET_KEY_123456"));
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var jwt = new JwtSecurityToken(
+                issuer: "PatientApi",
+                audience: "PatientApiUsers",
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(30),
+                signingCredentials: creds
+            );
+
+            var newAccessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            // Rotation: replace refresh token
+            var newRefreshToken = GenerateRefreshToken();
+            patient.RefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshToken);
+            patient.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+            patient.RefreshTokenRevokedAt = null;
+
+            return Ok(new TokenResponse
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            });
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout([FromBody] LogoutRequest request)
+        {
+            var patient = TestedPatientDataDTO.Data
+                .FirstOrDefault(p => p.Email == request.Email);
+
+            if (patient == null)
+                return Ok(); // Do not reveal if user exists
+
+            bool refreshValid = BCrypt.Net.BCrypt.Verify(request.RefreshToken, patient.RefreshTokenHash);
+            if (!refreshValid)
+                return Ok();
+
+            patient.RefreshTokenRevokedAt = DateTime.UtcNow;
+            return Ok("Logged out successfully");
+        }
+
     }
 }

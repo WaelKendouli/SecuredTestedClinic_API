@@ -18,6 +18,9 @@ namespace DTOsLayer
         public string Gender { get; set; }
         public string Password { get; set; }
 
+        public string RefreshTokenHash { get; set; }
+        public DateTime? RefreshTokenExpiresAt { get; set; }
+        public DateTime? RefreshTokenRevokedAt { get; set; }
 
         public PatientDTO()
         { 
