@@ -61,6 +61,7 @@ namespace ClinicManagementSystemAPI.Controllers
                 Encoding.UTF8.GetBytes("THIS_IS_A_VERY_SECRET_KEY_123456"));
 
 
+
             // Step 5: Define the signing credentials.
             // This specifies the algorithm used to sign the token.
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

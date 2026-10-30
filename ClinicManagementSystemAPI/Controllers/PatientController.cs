@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ClinicLogicLayer;
+﻿using ClinicLogicLayer;
 using DTOsLayer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Security.Claims;
 namespace ClinicManagementSystemAPI.Controllers
 {
     [Authorize]
@@ -71,6 +73,39 @@ namespace ClinicManagementSystemAPI.Controllers
             }
             return BadRequest("Failed to update patient");
         }
+        [Authorize]
+        [HttpGet("FindPatient/{patientID}", Name = "FindPatient")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
 
+
+        public async Task<IActionResult> FindPatient(int patientID)
+        {
+            if (patientID < 1)
+                return BadRequest("Invalid patient id.");
+
+            var patient = TestedPatientDataDTO.Data.FirstOrDefault(p => p.PatientID == patientID);
+            if (patient == null)
+                return NotFound("patient not found.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            int authenticatedPatientId = int.Parse(userId);
+
+            bool isAdmin = userRole == "Admin";
+
+            if (!isAdmin && authenticatedPatientId != patientID)
+                return Forbid();
+
+            if (patient != null)
+            {
+                return Ok(patient);
+            }
+            return BadRequest("Failed to update patient");
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using BCrypt.Net;
@@ -9,23 +10,26 @@ namespace DTOsLayer
     public class TestedPatientDataDTO : PatientDTO //Added for data simulation
     {
         public string Role { get; set; } = "";
+        public static List<TestedPatientDataDTO> Data = GetDataSimulation();
         public static List<TestedPatientDataDTO> GetDataSimulation()
         {
+          
+
             return new List<TestedPatientDataDTO>
             {
-                new TestedPatientDataDTO
-                {
-                    PatientID = 1,
-                    FirstName = "John",
-                    LastName = "Doe",
-                    DateOfBirth = new DateTime(1990, 1, 1),
-                    Email = "john.doe@example.com",
-                    Phone = "123-456-7890",
-                    Address = "123 Main Street",
-                    Gender = "Male",
-                    Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!"),
-                    Role = "Patient"
-                } ,
+               new  TestedPatientDataDTO
+           {
+               PatientID = 1,
+               FirstName = "John",
+               LastName = "Doe",
+               DateOfBirth = new DateTime(1990, 1, 1),
+               Email = "john.doe@example.com",
+               Phone = "123-456-7890",
+               Address = "123 Main Street",
+               Gender = "Male",
+               Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!"),
+               Role = "Patient"
+           } ,
                 new TestedPatientDataDTO
                 {
                     PatientID = 2,
