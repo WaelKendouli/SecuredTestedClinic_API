@@ -1,4 +1,6 @@
+using ClinicManagementSystemAPI.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -29,8 +31,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ===============================
 // Authorization Configuration
 // ===============================
+builder.Services.AddSingleton<IAuthorizationHandler, clsOwnerOrAdminHandler>();
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("PatientOwnerOrAdmin", policy =>
+        policy.Requirements.Add(new clsOwnerOrAdminRequirments()));
+});
 
 // ===============================
 // Controllers
@@ -43,6 +50,7 @@ builder.Services.AddControllers();
 // ===============================
 
 builder.Services.AddEndpointsApiExplorer();
+
 
 builder.Services.AddSwaggerGen(options =>
 {

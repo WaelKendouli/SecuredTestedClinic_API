@@ -82,7 +82,7 @@ namespace ClinicManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
 
 
-        public async Task<IActionResult> FindPatient(int patientID)
+        public async Task<IActionResult> FindPatient(int patientID , [FromServices] IAuthorizationService authorizationService)
         {
             if (patientID < 1)
                 return BadRequest("Invalid patient id.");
@@ -90,22 +90,19 @@ namespace ClinicManagementSystemAPI.Controllers
             var patient = TestedPatientDataDTO.Data.FirstOrDefault(p => p.PatientID == patientID);
             if (patient == null)
                 return NotFound("patient not found.");
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            var authResult = await authorizationService.AuthorizeAsync(
+       User,
+       patientID,
+       "PatientOwnerOrAdmin");
 
-            int authenticatedPatientId = int.Parse(userId);
-
-            bool isAdmin = userRole == "Admin";
-
-            if (!isAdmin && authenticatedPatientId != patientID)
+            if (!authResult.Succeeded)
                 return Forbid();
 
-            if (patient != null)
-            {
+
+
                 return Ok(patient);
-            }
-            return BadRequest("Failed to update patient");
+            
         }
     }
 }
