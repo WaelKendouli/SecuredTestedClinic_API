@@ -15,7 +15,12 @@ namespace ClinicManagementSystemAPI.Controllers
     [ApiController]
     public class AuthController : Controller
     {
+        private readonly ILogger<AuthController> _logger;
 
+        public AuthController(ILogger<AuthController> logger)
+        {
+            _logger = logger;
+        }
         private static string GenerateRefreshToken()
         {
             var bytes = new byte[64];
@@ -34,12 +39,19 @@ namespace ClinicManagementSystemAPI.Controllers
             var patient = TestedPatientDataDTO.GetDataSimulation()
                 .FirstOrDefault(s => s.Email == request.Email);
 
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             // If no student is found with the given email,
             // return 401 Unauthorized without revealing which field was wrong.
             if (patient == null)
+            {
+                _logger.LogWarning(
+                "Failed login attempt (email not found). Email={Email}, IP={IP}",
+                request.Email,
+                ip
+                );
                 return Unauthorized("Invalid credentials");
-
+            }
 
             // Step 2: Verify the provided password against the stored hash.
             // BCrypt handles hashing and salt internally.
@@ -50,7 +62,15 @@ namespace ClinicManagementSystemAPI.Controllers
             // If the password does not match the stored hash,
             // return 401 Unauthorized.
             if (!isValidPassword)
+            {
+                _logger.LogWarning(
+                "Failed login attempt (bad password). Email={Email}, IP={IP}",
+                request.Email,
+                ip
+                );
+
                 return Unauthorized("Invalid credentials");
+            }
 
 
             // Step 3: Create claims that represent the authenticated user's identity.
@@ -122,6 +142,14 @@ namespace ClinicManagementSystemAPI.Controllers
         [EnableRateLimiting("AuthLimiter")]
         public IActionResult Refresh([FromBody] clsRefreshRequest request)
         {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            _logger.LogWarning(
+    "Invalid refresh token attempt. Email={Email}, IP={IP}",
+    request.Email,
+    ip
+);
+
             var patient = TestedPatientDataDTO.Data
                 .FirstOrDefault(p => p.Email == request.Email);
 
