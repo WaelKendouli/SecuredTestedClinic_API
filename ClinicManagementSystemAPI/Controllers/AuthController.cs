@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using DTOsLayer.Auth;
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace ClinicManagementSystemAPI.Controllers
 {
     [Route("api/Auth")]
@@ -24,6 +26,7 @@ namespace ClinicManagementSystemAPI.Controllers
 
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthLimiter")]
         public IActionResult Login([FromBody] LoginRequestDTO request)
         {
             // Step 1: Find the student by email from the in-memory data store.
@@ -116,6 +119,7 @@ namespace ClinicManagementSystemAPI.Controllers
         }
 
         [HttpPost("refresh")]
+        [EnableRateLimiting("AuthLimiter")]
         public IActionResult Refresh([FromBody] clsRefreshRequest request)
         {
             var patient = TestedPatientDataDTO.Data
@@ -171,6 +175,7 @@ namespace ClinicManagementSystemAPI.Controllers
         }
 
         [HttpPost("logout")]
+        [EnableRateLimiting("AuthLimiter")]
         public IActionResult Logout([FromBody] LogoutRequest request)
         {
             var patient = TestedPatientDataDTO.Data
